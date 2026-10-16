@@ -1,25 +1,337 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hdds2402-lab-01 Static Asset</title>
+    <meta name="theme-color" content="#f5f2e9">
+    <title>井字遊戲</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 0 20px;
-            color: #333;
+        :root {
+            color-scheme: light;
+            --paper: #f5f2e9;
+            --ink: #202c2a;
+            --muted: #687572;
+            --line: #d9ded6;
+            --teal: #176b62;
+            --coral: #d95e48;
+            --yellow: #f1c85b;
         }
-        h1 { color: #f63; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        * { box-sizing: border-box; }
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--ink);
+            background-color: var(--paper);
+            background-image: radial-gradient(#c8d1c7 0.7px, transparent 0.7px);
+            background-size: 20px 20px;
+            font-family: "Noto Sans TC", sans-serif;
+        }
+        button { font: inherit; }
+        .page {
+            width: min(100% - 48px, 1040px);
+            min-height: 100vh;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .topbar {
+            height: 82px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--line);
+            animation: arrive 500ms ease both;
+        }
+        .wordmark {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .wordmark-mark { color: var(--teal); font-size: 24px; line-height: 1; }
+        .edition {
+            color: var(--muted);
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+            align-items: center;
+            gap: clamp(42px, 8vw, 112px);
+            padding: 62px 0 76px;
+        }
+        .game { animation: arrive 600ms 80ms ease both; }
+        .eyebrow {
+            margin: 0 0 12px;
+            color: var(--teal);
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        h1 {
+            margin: 0;
+            font-size: clamp(34px, 5vw, 54px);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .subtitle { margin: 10px 0 30px; color: var(--muted); font-size: 14px; }
+        .board {
+            display: grid;
+            aspect-ratio: 1;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #cdd5cc;
+            background: #e6e9df;
+            box-shadow: 7px 7px 0 #c5d2c5;
+        }
+        .cell {
+            display: grid;
+            place-items: center;
+            min-width: 0;
+            padding: 0;
+            border: 1px solid #d5ddd3;
+            background: #fbfaf5;
+            color: var(--ink);
+            cursor: pointer;
+            transition: background-color 140ms ease, transform 140ms ease;
+        }
+        .cell:not(:disabled):hover { transform: translateY(-2px); background: #fff; }
+        .cell:focus-visible, .action:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+        .cell:disabled { cursor: default; }
+        .cell.mark-x { color: var(--teal); }
+        .cell.mark-o { color: var(--coral); }
+        .cell.winner { background: #f4dfa0; }
+        .mark {
+            font-family: "Space Grotesk", sans-serif;
+            font-size: clamp(50px, 9vw, 92px);
+            font-weight: 600;
+            line-height: 1;
+        }
+        .game-info {
+            padding-top: 30px;
+            animation: arrive 600ms 160ms ease both;
+        }
+        .status-label {
+            margin: 0 0 9px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status {
+            min-height: 38px;
+            margin: 0 0 36px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .status .mark-x { color: var(--teal); }
+        .status .mark-o { color: var(--coral); }
+        .score-title {
+            margin: 0 0 13px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .score-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            min-height: 64px;
+            border-top: 1px solid var(--line);
+        }
+        .player { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
+        .player-mark {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            background: #e1ebe3;
+            color: var(--teal);
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .player-mark.o { background: #f5e3dc; color: var(--coral); }
+        .score { font-family: "Space Grotesk", sans-serif; font-size: 19px; font-weight: 700; }
+        .score.draws { color: var(--muted); }
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+        .action {
+            min-height: 46px;
+            padding: 0 16px;
+            border: 1px solid var(--ink);
+            background: var(--ink);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 140ms ease, color 140ms ease;
+        }
+        .action:hover { background: var(--teal); border-color: var(--teal); }
+        .action.secondary { background: transparent; color: var(--ink); }
+        .action.secondary:hover { background: #e4e8df; border-color: var(--ink); }
+        footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 18px 0 22px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 11px;
+        }
+        @keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 700px) {
+            .page { width: min(100% - 36px, 480px); }
+            .topbar { height: 68px; }
+            main { grid-template-columns: 1fr; gap: 38px; padding: 44px 0 48px; }
+            .subtitle { margin-bottom: 24px; }
+            .game-info { padding-top: 0; }
+            .status { margin-bottom: 24px; }
+            .actions { margin-top: 22px; }
+            footer { margin-top: auto; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to hdds2402-lab-01</h1>
-    <p>This static HTML page is successfully bundled and served via Cloudflare Workers Static Assets.</p>
-    <p>To update this page, modify <code>public/index.html</code> and run <code>npx wrangler deploy</code>.</p>
+    <div class="page">
+        <header class="topbar">
+            <div class="wordmark"><span class="wordmark-mark" aria-hidden="true">✳</span> THREE IN A ROW</div>
+            <span class="edition">CLASSIC / 001</span>
+        </header>
+        <main>
+            <section class="game" aria-labelledby="game-title">
+                <p class="eyebrow">兩人對戰 · 經典遊戲</p>
+                <h1 id="game-title">井字遊戲</h1>
+                <p class="subtitle">TIC TAC TOE</p>
+                <div class="board" role="group" aria-label="井字遊戲棋盤">
+                    <button class="cell" type="button" data-cell="0" aria-label="第 1 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="1" aria-label="第 2 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="2" aria-label="第 3 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="3" aria-label="第 4 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="4" aria-label="第 5 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="5" aria-label="第 6 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="6" aria-label="第 7 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="7" aria-label="第 8 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                    <button class="cell" type="button" data-cell="8" aria-label="第 9 格，空格"><span class="mark" aria-hidden="true"></span></button>
+                </div>
+            </section>
+            <aside class="game-info" aria-label="對戰資訊">
+                <p class="status-label">目前狀態</p>
+                <p class="status" id="status" aria-live="polite">輪到 <span class="mark-x">X</span></p>
+                <p class="score-title">本場紀錄</p>
+                <div class="score-row">
+                    <span class="player"><span class="player-mark" aria-hidden="true">X</span>玩家 X</span>
+                    <span class="score" id="score-x">0</span>
+                </div>
+                <div class="score-row">
+                    <span class="player"><span class="player-mark o" aria-hidden="true">O</span>玩家 O</span>
+                    <span class="score" id="score-o">0</span>
+                </div>
+                <div class="score-row">
+                    <span class="player">平手</span>
+                    <span class="score draws" id="score-draws">0</span>
+                </div>
+                <div class="actions">
+                    <button class="action" id="next-round" type="button">再玩一局</button>
+                    <button class="action secondary" id="reset-match" type="button">重設比分</button>
+                </div>
+            </aside>
+        </main>
+        <footer><span>TAKE YOUR TURN</span><span>✳ &nbsp; X / O</span></footer>
+    </div>
+    <script>
+        const cells = [...document.querySelectorAll("[data-cell]")];
+        const status = document.querySelector("#status");
+        const scores = { X: 0, O: 0, draws: 0 };
+        const winningLines = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6],
+        ];
+        let board = Array(9).fill("");
+        let currentPlayer = "X";
+        let roundOver = false;
+
+        function setStatus(message, player = "") {
+            status.innerHTML = player
+                ? `${message} <span class="mark-${player.toLowerCase()}">${player}</span>`
+                : message;
+        }
+
+        function finishRound(winner, winningLine) {
+            roundOver = true;
+            cells.forEach((cell) => { cell.disabled = true; });
+            if (winner) {
+                scores[winner] += 1;
+                winningLine.forEach((index) => cells[index].classList.add("winner"));
+                setStatus("玩家獲勝：", winner);
+            } else {
+                scores.draws += 1;
+                setStatus("平手，再來一局？");
+            }
+            document.querySelector("#score-x").textContent = scores.X;
+            document.querySelector("#score-o").textContent = scores.O;
+            document.querySelector("#score-draws").textContent = scores.draws;
+        }
+
+        function playCell(event) {
+            const cell = event.currentTarget;
+            const index = Number(cell.dataset.cell);
+            if (board[index] || roundOver) return;
+
+            board[index] = currentPlayer;
+            cell.querySelector(".mark").textContent = currentPlayer;
+            cell.classList.add(`mark-${currentPlayer.toLowerCase()}`);
+            cell.disabled = true;
+            cell.setAttribute("aria-label", `第 ${index + 1} 格，${currentPlayer}`);
+
+            const winningLine = winningLines.find((line) => line.every((position) => board[position] === currentPlayer));
+            if (winningLine) {
+                finishRound(currentPlayer, winningLine);
+            } else if (board.every(Boolean)) {
+                finishRound(null);
+            } else {
+                currentPlayer = currentPlayer === "X" ? "O" : "X";
+                setStatus("輪到", currentPlayer);
+            }
+        }
+
+        function startRound() {
+            board = Array(9).fill("");
+            currentPlayer = "X";
+            roundOver = false;
+            cells.forEach((cell, index) => {
+                cell.disabled = false;
+                cell.classList.remove("mark-x", "mark-o", "winner");
+                cell.querySelector(".mark").textContent = "";
+                cell.setAttribute("aria-label", `第 ${index + 1} 格，空格`);
+            });
+            setStatus("輪到", currentPlayer);
+        }
+
+        cells.forEach((cell) => cell.addEventListener("click", playCell));
+        document.querySelector("#next-round").addEventListener("click", startRound);
+        document.querySelector("#reset-match").addEventListener("click", () => {
+            scores.X = 0;
+            scores.O = 0;
+            scores.draws = 0;
+            document.querySelector("#score-x").textContent = "0";
+            document.querySelector("#score-o").textContent = "0";
+            document.querySelector("#score-draws").textContent = "0";
+            startRound();
+        });
+    </script>
 </body>
 </html>
